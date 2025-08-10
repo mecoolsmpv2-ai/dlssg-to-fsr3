@@ -1,0 +1,151 @@
+cmake_minimum_required(VERSION 3.26)
+project(dlssg-to-xess VERSION 0.130)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Output directories
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+# Compiler flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+
+# Find required packages
+find_package(PkgConfig REQUIRED)
+
+# Check for Vulkan
+find_package(Vulkan QUIET)
+if(Vulkan_FOUND)
+    message(STATUS "Vulkan found: ${Vulkan_INCLUDE_DIRS}")
+else()
+    message(WARNING "Vulkan not found - Vulkan support will be disabled")
+endif()
+
+# Check for OpenGL
+find_package(OpenGL QUIET)
+if(OpenGL_FOUND)
+    message(STATUS "OpenGL found")
+else()
+    message(WARNING "OpenGL not found - OpenGL support will be disabled")
+endif()
+
+# Include directories
+include_directories(
+    ${CMAKE_SOURCE_DIR}/source/maindll
+    ${CMAKE_SOURCE_DIR}/source/maindll/NGX
+    ${CMAKE_SOURCE_DIR}/dependencies/xess/inc
+)
+
+# Source files for the main DLL
+set(MAIN_DLL_SOURCES
+    source/maindll/DllMain.cpp
+    source/maindll/Util.cpp
+    source/maindll/XeSSFrameInterpolator.cpp
+    source/maindll/XeSSFrameInterpolatorDX.cpp
+    source/maindll/NGX/NvNGXDirectX12.cpp
+    source/maindll/NGX/NvNGXExports.cpp
+)
+
+# Create the main DLL
+add_library(dlssg_to_xess_intel_is_better SHARED ${MAIN_DLL_SOURCES})
+
+# Set output name
+set_target_properties(dlssg_to_xess_intel_is_better PROPERTIES
+    OUTPUT_NAME "dlssg_to_xess_intel_is_better"
+    PREFIX ""
+)
+
+# Compiler definitions
+target_compile_definitions(dlssg_to_xess_intel_is_better PRIVATE
+    BUILD_GIT_COMMIT_HASH="\"$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)\""
+    BUILD_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    BUILD_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    LINUX_BUILD=1
+)
+
+# Link libraries
+target_link_libraries(dlssg_to_xess_intel_is_better
+    ${CMAKE_DL_LIBS}
+)
+
+if(Vulkan_FOUND)
+    target_link_libraries(dlssg_to_xess_intel_is_better ${Vulkan_LIBRARIES})
+    target_include_directories(dlssg_to_xess_intel_is_better PRIVATE ${Vulkan_INCLUDE_DIRS})
+endif()
+
+if(OpenGL_FOUND)
+    target_link_libraries(dlssg_to_xess_intel_is_better ${OPENGL_LIBRARIES})
+endif()
+
+# Create a simple test executable
+add_executable(xess_test
+    source/maindll/Util.cpp
+)
+
+target_compile_definitions(xess_test PRIVATE
+    LINUX_BUILD=1
+)
+
+# Copy XeSS runtime files
+add_custom_command(TARGET dlssg_to_xess_intel_is_better POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/dependencies/xess/bin/libxess_fg.dll
+        ${CMAKE_BINARY_DIR}/bin/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/dependencies/xess/bin/libxell.dll
+        ${CMAKE_BINARY_DIR}/bin/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/resources/dlssg_to_xess.ini
+        ${CMAKE_BINARY_DIR}/bin/
+    COMMENT "Copying XeSS runtime files"
+)
+
+# Create a Linux-compatible wrapper
+add_executable(xess_wrapper
+    source/maindll/Util.cpp
+)
+
+target_compile_definitions(xess_wrapper PRIVATE
+    LINUX_BUILD=1
+    XESS_WRAPPER=1
+)
+
+# Install targets
+install(TARGETS dlssg_to_xess_intel_is_better
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
+
+install(TARGETS xess_test xess_wrapper
+    RUNTIME DESTINATION bin
+)
+
+# Install runtime files
+install(FILES
+    ${CMAKE_SOURCE_DIR}/dependencies/xess/bin/libxess_fg.dll
+    ${CMAKE_SOURCE_DIR}/dependencies/xess/bin/libxell.dll
+    ${CMAKE_SOURCE_DIR}/resources/dlssg_to_xess.ini
+    DESTINATION bin
+)
+
+# Print configuration summary
+message(STATUS "")
+message(STATUS "=== XeSS Mod Build Configuration ===")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Vulkan support: ${Vulkan_FOUND}")
+message(STATUS "OpenGL support: ${OpenGL_FOUND}")
+message(STATUS "Output directory: ${CMAKE_BINARY_DIR}/bin")
+message(STATUS "=====================================")
+message(STATUS "")

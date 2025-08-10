@@ -1,0 +1,70 @@
+# XeSS Mod Linux Build Makefile
+
+CXX = g++
+CXXFLAGS = -std=c++23 -Wall -Wextra -O2 -fPIC
+INCLUDES = -Isource/maindll -Isource/maindll/NGX -Idependencies/xess/inc
+DEFINES = -DLINUX_BUILD=1 -DXESS_MOD_LINUX=1
+
+# Directories
+SRCDIR = source/maindll
+OBJDIR = build-linux/obj
+BINDIR = build-linux/bin
+LIBDIR = build-linux/lib
+
+# Create directories
+$(shell mkdir -p $(OBJDIR) $(BINDIR) $(LIBDIR))
+
+# Source files
+SOURCES = $(SRCDIR)/Util-Linux.cpp $(SRCDIR)/test-main.cpp
+OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+
+# Targets
+.PHONY: all clean test
+
+all: $(BINDIR)/xess_test_simple $(LIBDIR)/libxess_mod_linux.so
+
+# Test executable
+$(BINDIR)/xess_test_simple: $(OBJDIR)/Util-Linux.o $(OBJDIR)/test-main.o
+	$(CXX) $(CXXFLAGS) $(DEFINES) -DXESS_TEST=1 -o $@ $^
+
+# Shared library
+$(LIBDIR)/libxess_mod_linux.so: $(OBJDIR)/Util-Linux.o
+	$(CXX) $(CXXFLAGS) $(DEFINES) -shared -o $@ $<
+
+# Object files
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(DEFINES) -c -o $@ $<
+
+# Copy XeSS runtime files
+copy_runtime: all
+	cp dependencies/xess/bin/libxess_fg.dll $(BINDIR)/
+	cp dependencies/xess/bin/libxell.dll $(BINDIR)/
+	cp resources/dlssg_to_xess.ini $(BINDIR)/
+
+# Test target
+test: $(BINDIR)/xess_test_simple
+	@echo "Running XeSS test..."
+	@$(BINDIR)/xess_test_simple || echo "Test completed"
+
+# Clean
+clean:
+	rm -rf build-linux
+
+# Install
+install: all copy_runtime
+	@echo "Installing XeSS mod components..."
+	@echo "Files built:"
+	@ls -la $(BINDIR)/
+	@ls -la $(LIBDIR)/
+
+# Show build info
+info:
+	@echo "=== XeSS Mod Linux Build Info ==="
+	@echo "Compiler: $(CXX)"
+	@echo "C++ Standard: c++23"
+	@echo "Build directory: build-linux"
+	@echo "Source directory: $(SRCDIR)"
+	@echo "Output directories:"
+	@echo "  Binaries: $(BINDIR)"
+	@echo "  Libraries: $(LIBDIR)"
+	@echo "=================================="
