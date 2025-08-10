@@ -1,4 +1,4 @@
-**dlssg-to-fsr3** is a drop-in mod/replacement for games utilizing [Nvidia's DLSS-G Frame Generation](https://nvidianews.nvidia.com/news/nvidia-introduces-dlss-3-with-breakthrough-ai-powered-frame-generation-for-up-to-4x-performance) technology that allows people to use [AMD's FSR 3 Frame Generation](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) technology instead. Only RTX 1600, RTX 2000, and RTX 3000 series GPUs are supported.
+**dlssg-to-xess** is a drop-in mod/replacement for games utilizing [Nvidia's DLSS-G Frame Generation](https://nvidianews.nvidia.com/news/nvidia-introduces-dlss-3-with-breakthrough-ai-powered-frame-generation-for-up-to-4x-performance) technology that allows people to use [Intel's XeSS 2.1 Frame Generation](https://github.com/intel/xess) technology instead. This mod supports all GPUs with Shader Model 6.4 support, including Intel Arc, AMD Radeon, and NVIDIA GeForce GPUs.
 
 Game-specific compatibility can be [found here](https://github.com/Nukem9/dlssg-to-fsr3/wiki/Game-Compatibility-List). Using dlssg-to-fsr3 in multiplayer games is ill advised and may lead to account bans. **Use at your own risk.**
 
@@ -13,8 +13,8 @@ Game-specific compatibility can be [found here](https://github.com/Nukem9/dlssg-
 
   1. Pick **one** of the included generic DLLs to use. Possible options are `version.dll`, `winhttp.dll`, or `dbghelp.dll`. We'll choose `version.dll` in this example.
   2. Find your game's installation folder. For Hogwarts Legacy, this is the directory containing `HogwartsLegacy.exe`. An example path is `C:\Program Files (x86)\Steam\steamapps\common\Hogwarts Legacy\Phoenix\Binaries\Win64\`.
-  3. Copy `dlssg_to_fsr3_amd_is_better.dll` and `version.dll` to your game's installation folder.
-  4. Done. A log file named `dlssg_to_fsr3.log` will be created after you launch the game.
+  3. Copy `dlssg_to_xess_intel_is_better.dll` and `version.dll` to your game's installation folder.
+  4. Done. A log file named `dlssg_to_xess.log` will be created after you launch the game.
 </details>
 
 <details>
@@ -22,8 +22,8 @@ Game-specific compatibility can be [found here](https://github.com/Nukem9/dlssg-
   
   1. Double click on `DisableNvidiaSignatureChecks.reg` and select **Run**. Click **Yes** on the next few dialogs.
   2. Find your game's installation folder. For Cyberpunk 2077, this is the directory containing `Cyberpunk2077.exe`. An example path is `C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\`.
-  3. Copy `dlssg_to_fsr3_amd_is_better.dll` and the new `nvngx.dll` to your game's installation folder.
-  4. A log file named `dlssg_to_fsr3.log` will be created after you launch the game.
+  3. Copy `dlssg_to_xess_intel_is_better.dll` and the new `nvngx.dll` to your game's installation folder.
+  4. A log file named `dlssg_to_xess.log` will be created after you launch the game.
 </details>
 
 <details>
@@ -37,7 +37,7 @@ Game-specific compatibility can be [found here](https://github.com/Nukem9/dlssg-
 1. Open `CMakeUserEnvVars.json` with a text editor and rename `___GAME_ROOT_DIRECTORY` to `GAME_ROOT_DIRECTORY`.
 2. Change the path in `GAME_ROOT_DIRECTORY` to your game of choice. Built DLLs are automatically copied over.
 3. Change the path in `GAME_DEBUGGER_CMDLINE` to your executable of choice. This allows direct debugging from Visual Studio's interface.
-4. Manually copy `resources\dlssg_to_fsr3.ini` to the game directory for FSR 3 visualization and debug options.
+4. Manually copy `resources\dlssg_to_xess.ini` to the game directory for XeSS 2.1 visualization and debug options.
 
 ## Building
 
@@ -134,7 +134,7 @@ Game-specific compatibility can be [found here](https://github.com/Nukem9/dlssg-
 **Version 0.60**
   - The nag prompt at startup has been removed.
   - Added a log file ("dlssg_to_fsr3.log") in the game directory.
-  - Added support for developer options and debug overlay ("dlssg_to_fsr3.ini").
+  - Added support for developer options and debug overlay ("dlssg_to_xess.ini").
   - More stability fixes.
   
 **Version 0.50**

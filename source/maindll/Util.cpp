@@ -63,7 +63,7 @@ namespace Util
 		if (wchar_t v[2]; GetEnvironmentVariableW(envKey, v, std::size(v)) == 1)
 			return v[0] == L'1';
 
-		const static auto iniPath = GetThisDllPath() + L"\\dlssg_to_fsr3.ini";
+		const static auto iniPath = GetThisDllPath() + L"\\dlssg_to_xess.ini";
 		return GetPrivateProfileIntW(L"Debug", Key, DefaultValue, iniPath.c_str()) != 0;
 	}
 }

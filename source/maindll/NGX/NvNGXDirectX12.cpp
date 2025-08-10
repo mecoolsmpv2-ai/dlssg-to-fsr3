@@ -1,13 +1,13 @@
 #include <d3d12.h>
 #include <dxgi.h>
-#include "FFFrameInterpolatorDX.h"
+#include "XeSSFrameInterpolatorDX.h"
 #include "NvNGX.h"
 
 typedef LONG NTSTATUS;
 #include <d3dkmthk.h>
 
 static std::shared_mutex FeatureInstanceHandleLock;
-static std::unordered_map<uint32_t, std::shared_ptr<FFFrameInterpolatorDX>> FeatureInstanceHandles;
+static std::unordered_map<uint32_t, std::shared_ptr<XeSSFrameInterpolatorDX>> FeatureInstanceHandles;
 
 NGXDLLEXPORT NGXResult NVSDK_NGX_D3D12_CreateFeature(
 	ID3D12CommandList *CommandList,
@@ -36,10 +36,10 @@ NGXDLLEXPORT NGXResult NVSDK_NGX_D3D12_CreateFeature(
 	uint32_t swapchainHeight = 0;
 	Parameters->Get5("Height", &swapchainHeight);
 
-	// Then initialize FSR
+	// Then initialize XeSS Frame Generation
 	try
 	{
-		auto instance = std::make_shared<FFFrameInterpolatorDX>(device, swapchainWidth, swapchainHeight, Parameters);
+		auto instance = std::make_shared<XeSSFrameInterpolatorDX>(device, swapchainWidth, swapchainHeight, Parameters);
 
 		std::scoped_lock lock(FeatureInstanceHandleLock);
 		{
@@ -86,14 +86,14 @@ NGXDLLEXPORT NGXResult NVSDK_NGX_D3D12_EvaluateFeature(ID3D12GraphicsCommandList
 
 	switch (status)
 	{
-	case FFX_EOF:
+	case XEFG_SWAPCHAIN_RESULT_ERROR_INVALID_ARGUMENT:
 		return NGX_INVALID_PARAMETER;
 
-	case FFX_OK:
+	case XEFG_SWAPCHAIN_RESULT_SUCCESS:
 	{
 		static bool once = [&]()
 		{
-			spdlog::info("NVSDK_NGX_D3D12_EvaluateFeature: Succeeded.");
+			spdlog::info("NVSDK_NGX_D3D12_EvaluateFeature: XeSS Frame Generation succeeded.");
 			return true;
 		}();
 

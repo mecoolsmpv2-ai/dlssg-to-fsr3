@@ -5,6 +5,7 @@ set(CURRENT_PROJECT dlssg_output_dll)
 
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(FIDELITYFX_SDK_DIR "${PROJECT_DEPENDENCIES_PATH}/FidelityFX-SDK/sdk")
+set(XESS_SDK_DIR "${PROJECT_DEPENDENCIES_PATH}/xess")
 
 file(
 	GLOB HEADER_FILES
@@ -51,7 +52,7 @@ target_include_directories(
 set_target_properties(
 	${CURRENT_PROJECT}
 	PROPERTIES
-		OUTPUT_NAME "dlssg_to_fsr3_amd_is_better"
+		OUTPUT_NAME "dlssg_to_xess_intel_is_better"
 		MSVC_DEBUG_INFORMATION_FORMAT "ProgramDatabase"
 )
 
@@ -132,21 +133,18 @@ target_include_directories(${CURRENT_PROJECT} PRIVATE "$ENV{VULKAN_SDK}/include"
 target_link_libraries(${CURRENT_PROJECT} PRIVATE Vulkan::Vulkan)
 target_link_options(${CURRENT_PROJECT} PRIVATE "/DELAYLOAD:vulkan-1.dll")
 
-# FidelityFX
+# XeSS SDK
 target_include_directories(
 	${CURRENT_PROJECT}
 	PRIVATE
-		"${FIDELITYFX_SDK_DIR}/include"
-		"${FIDELITYFX_SDK_DIR}/src/components"
+		"${XESS_SDK_DIR}/inc"
 )
 
 target_link_libraries(
 	${CURRENT_PROJECT}
 	PRIVATE
-		"${FIDELITYFX_SDK_DIR}/bin/ffx_sdk/ffx_backend_dx12_x64$<$<CONFIG:Debug>:d>.lib"
-		"${FIDELITYFX_SDK_DIR}/bin/ffx_sdk/ffx_backend_vk_x64$<$<CONFIG:Debug>:d>.lib"
-		"${FIDELITYFX_SDK_DIR}/bin/ffx_sdk/ffx_frameinterpolation_x64$<$<CONFIG:Debug>:d>.lib"
-		"${FIDELITYFX_SDK_DIR}/bin/ffx_sdk/ffx_opticalflow_x64$<$<CONFIG:Debug>:d>.lib"
+		"${XESS_SDK_DIR}/lib/libxess_fg.lib"
+		"${XESS_SDK_DIR}/lib/libxell.lib"
 )
 
 #
@@ -160,5 +158,24 @@ if(NOT $ENV{GAME_ROOT_DIRECTORY} STREQUAL "")
 			"${CMAKE_COMMAND}" -E copy_if_different
 			"$<TARGET_FILE:${CURRENT_PROJECT}>"
 			"$ENV{GAME_ROOT_DIRECTORY}/$<TARGET_FILE_NAME:${CURRENT_PROJECT}>"
+	)
+	
+	# Copy XeSS DLLs to game directory
+	add_custom_command(
+		TARGET ${CURRENT_PROJECT}
+		POST_BUILD
+		COMMAND
+			"${CMAKE_COMMAND}" -E copy_if_different
+			"${XESS_SDK_DIR}/bin/libxess_fg.dll"
+			"$ENV{GAME_ROOT_DIRECTORY}/libxess_fg.dll"
+	)
+	
+	add_custom_command(
+		TARGET ${CURRENT_PROJECT}
+		POST_BUILD
+		COMMAND
+			"${CMAKE_COMMAND}" -E copy_if_different
+			"${XESS_SDK_DIR}/bin/libxell.dll"
+			"$ENV{GAME_ROOT_DIRECTORY}/libxell.dll"
 	)
 endif()
