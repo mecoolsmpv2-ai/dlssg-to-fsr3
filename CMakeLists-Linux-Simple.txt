@@ -1,0 +1,94 @@
+cmake_minimum_required(VERSION 3.26)
+project(xess-mod-linux VERSION 0.130)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Output directories
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+# Compiler flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+
+# Include directories
+include_directories(
+    ${CMAKE_SOURCE_DIR}/source/maindll
+    ${CMAKE_SOURCE_DIR}/source/maindll/NGX
+    ${CMAKE_SOURCE_DIR}/dependencies/xess/inc
+)
+
+# Create a simple test program
+add_executable(xess_test_simple
+    source/maindll/Util.cpp
+)
+
+# Create a Linux-compatible library
+add_library(xess_mod_linux SHARED
+    source/maindll/Util.cpp
+)
+
+# Set output name
+set_target_properties(xess_mod_linux PROPERTIES
+    OUTPUT_NAME "xess_mod_linux"
+    PREFIX ""
+)
+
+# Compiler definitions
+target_compile_definitions(xess_mod_linux PRIVATE
+    LINUX_BUILD=1
+    XESS_MOD_LINUX=1
+)
+
+target_compile_definitions(xess_test_simple PRIVATE
+    LINUX_BUILD=1
+    XESS_TEST=1
+)
+
+# Link libraries
+target_link_libraries(xess_mod_linux
+    ${CMAKE_DL_LIBS}
+)
+
+target_link_libraries(xess_test_simple
+    ${CMAKE_DL_LIBS}
+)
+
+# Copy XeSS runtime files
+add_custom_command(TARGET xess_mod_linux POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/dependencies/xess/bin/libxess_fg.dll
+        ${CMAKE_BINARY_DIR}/bin/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/dependencies/xess/bin/libxell.dll
+        ${CMAKE_BINARY_DIR}/bin/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/resources/dlssg_to_xess.ini
+        ${CMAKE_BINARY_DIR}/bin/
+    COMMENT "Copying XeSS runtime files"
+)
+
+# Create a simple header-only library for XeSS integration
+add_library(xess_headers INTERFACE)
+target_include_directories(xess_headers INTERFACE
+    ${CMAKE_SOURCE_DIR}/dependencies/xess/inc
+)
+
+# Print configuration summary
+message(STATUS "")
+message(STATUS "=== XeSS Mod Linux Build Configuration ===")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Output directory: ${CMAKE_BINARY_DIR}/bin")
+message(STATUS "===========================================")
+message(STATUS "")
